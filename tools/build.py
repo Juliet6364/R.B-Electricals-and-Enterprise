@@ -266,6 +266,8 @@ def footer():
   <a class="wa" href="https://wa.me/{B['wa']}?text=Hello%20R.B%20Electricals%2C%20I%20would%20like%20to%20enquire%20about%20your%20services." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">{ic('wa')}</a>
   <a class="call" href="tel:+91{B['phones'][0]}" aria-label="Call us">{ic('phone')}</a>
 </div>
+<div class="lightbox" id="lightbox" hidden><button class="lb-close" aria-label="Close">×</button><button class="lb-prev" aria-label="Previous">‹</button><figure><img alt=""><figcaption></figcaption></figure><button class="lb-next" aria-label="Next">›</button></div>
+<div class="progress" aria-hidden="true"></div>
 <script src="/assets/js/main.js" defer></script>
 </body>
 </html>
@@ -287,15 +289,54 @@ def svc_cards(items):
 def client_tiles(items):
     return "\n".join(f'<div class="client reveal" title="{c[2]}"><div><b>{c[0]}</b>{f"<span>{c[1]}</span>" if c[1] else ""}</div></div>' for c in items)
 
+def marquee_items(hidden=False):
+    aria = ' aria-hidden="true"' if hidden else ""
+    return "".join(f'<div class="mq-item"{aria}><b>{c[0]}</b>{f"<span>{c[1]}</span>" if c[1] else ""}</div>' for c in CLIENTS)
+
+GALLERY_CATS = [("offices", "Offices"), ("electrical", "Electrical"), ("interiors", "Interiors"), ("ceiling", "Ceiling & Civil"), ("networking", "LAN / CCTV")]
+
+def gallery_items():
+    """Photos in assets/img/gallery/<category>/*.jpg are shown automatically."""
+    items = []
+    base = os.path.join(ROOT, "assets", "img", "gallery")
+    for slug, label in GALLERY_CATS:
+        d = os.path.join(base, slug)
+        if not os.path.isdir(d):
+            continue
+        for f in sorted(os.listdir(d)):
+            if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                cap = os.path.splitext(f)[0].replace("-", " ").replace("_", " ").strip().capitalize()
+                items.append((slug, label, f"/assets/img/gallery/{slug}/{f}", cap))
+    return items
+
+def gallery_section():
+    items = gallery_items()
+    if not items:
+        return ""
+    used = []
+    for it in items:
+        if it[0] not in used:
+            used.append(it[0])
+    btns = '<button class="gf on" data-filter="all">All</button>' + "".join(
+        f'<button class="gf" data-filter="{s}">{l}</button>' for s, l in GALLERY_CATS if s in used)
+    tiles = "".join(f'<a class="g-item reveal" href="{src}" data-cat="{slug}" data-caption="{html.escape(cap)}"><img src="{src}" alt="{html.escape(cap)}" loading="lazy"><span>{label}</span></a>' for slug, label, src, cap in items)
+    return f"""<section class="section" id="gallery"><div class="wrap">
+  <div class="sec-head center reveal"><div class="eyebrow">Gallery</div><h2>Our Work in Pictures</h2><p>Photos from our completed and ongoing sites.</p></div>
+  <div class="g-filters">{btns}</div>
+  <div class="gallery">{tiles}</div>
+</div></section>"""
+
 def proj_cards(items, status=True):
     out = []
     for c in items:
         slug = c[2].lower().replace(" ", "-").replace("(", "").replace(")", "").replace(".", "")
         img_rel = f"assets/img/projects/{slug}.jpg"
         img = f'<img src="/{img_rel}" alt="{c[2]} project" loading="lazy">' if os.path.exists(os.path.join(ROOT, img_rel)) else ""
-        out.append(f"""<article class="proj reveal">
-  <div class="cover">{img}<div class="mono">{c[0]}<small>{c[1] or 'CLIENT'}</small></div>{'<span class="status">Client project</span>' if status else ''}</div>
-  <div class="body"><h3>{c[2]}</h3><p>Interior &amp; Electrical Works</p></div>
+        has = " has-img" if img else ""
+        mono = "" if img else f'<img class="wm" src="/assets/img/logo-mark.png" alt="" loading="lazy"><div class="mono">{c[0]}<small>{c[1] or "CLIENT"}</small></div>'
+        out.append(f"""<article class="proj reveal{has}">
+  <div class="cover">{img}{mono}{'<span class="status">Client project</span>' if status else ''}</div>
+  <div class="body"><h3>{c[2]}</h3><p><span class="dot"></span>Interior &amp; Electrical Works</p></div>
 </article>""")
     return "\n".join(out)
 
@@ -353,30 +394,45 @@ def page_home():
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}
     faq_html = "".join(f"<details class=\"reveal\"><summary>{q}</summary><p>{a}</p></details>" for q, a in faq)
     body = f"""
-<section class="hero"><div class="wrap">
-  <div>
-    <div class="eyebrow">Powering spaces, building trust.</div>
-    <h1>Complete Interior, <span class="hl">Electrical</span> &amp; Turnkey Solutions</h1>
-    <p class="lead">From concept to completion — Government certified Class-1 licensed electrical contractor delivering interiors, electrical and turnkey projects across Bengaluru.</p>
-    <ul class="hero-pills">{pills_html}</ul>
-    <div class="hero-cta">
-      <a class="btn btn-primary" href="/projects.html">View Our Projects {ic('arrow')}</a>
-      <a class="btn btn-ghost" href="/contact.html">Contact Us {ic('arrow')}</a>
+<section class="hx">
+  <div class="hx-bg" aria-hidden="true"><img src="/assets/img/hero-office.jpg" alt="" width="1000" height="876" fetchpriority="high"></div>
+  <svg class="hx-lines" viewBox="0 0 1440 800" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M-20 620 H380 L430 570 H760 L800 610 H1460"/><path d="M-20 680 H240 L290 730 H900 L950 680 H1460"/><path d="M1460 160 H1100 L1050 210 H820"/>
+  </svg>
+  <div class="wrap hx-inner">
+    <div class="hx-copy">
+      <div class="hx-badge">{ic('shield')}<span>Govt. Certified Class-1 Licensed Electrical Contractor</span></div>
+      <h1>Complete Interior, <span class="hl">Electrical</span> &amp; Turnkey Solutions</h1>
+      <p class="lead">From concept to completion. We design, build, wire and hand over offices, commercial spaces and homes across Bengaluru, with one team accountable for everything.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="/contact.html#quote">Get a Free Quote {ic('arrow')}</a>
+        <a class="btn btn-ghost btn-lg" href="/projects.html">View Our Projects</a>
+      </div>
+      <ul class="hero-pills">{pills_html}</ul>
     </div>
+    <aside class="hx-card reveal">
+      <div class="hx-card-top"><img src="/assets/img/logo-mark.png" alt="" width="54" height="45"><div><b>Why clients choose RB</b><span>Single point responsibility</span></div></div>
+      <ul>
+        <li>{ic('check')}Licensed HT &amp; LT electrical works</li>
+        <li>{ic('check')}Interiors, civil, ceiling &amp; painting under one roof</li>
+        <li>{ic('check')}LAN, CCTV, Wi-Fi &amp; UPS integration</li>
+        <li>{ic('check')}Transparent BOQ, on-time handover</li>
+      </ul>
+      <a class="hx-call" href="tel:+91{B['phones'][0]}">{ic('phone')}<span><small>Call us now</small>{fmt_phone(B['phones'][0])}</span></a>
+    </aside>
   </div>
-  <div class="hero-media">
-    <div class="frame"><img src="/assets/img/hero-office.jpg" alt="Modern corporate office interior with workstations and lighting" width="1000" height="876" fetchpriority="high"></div>
-    <img class="bolt" src="/assets/img/logo-mark.png" alt="" width="86" height="72">
-    <div class="float"><div class="ic">{ic('shield')}</div><div><strong>Class-1 Licensed</strong><span>Govt. certified electrical contractor</span></div></div>
-  </div>
-</div></section>
+  <div class="wrap"><div class="hx-stats">
+    <div class="stat"><b><span data-count="10">10</span>+</b><span>Corporate clients</span></div>
+    <div class="stat"><b><span data-count="9">9</span></b><span>Services under one roof</span></div>
+    <div class="stat"><b>Class-1</b><span>Govt. licensed contractor</span></div>
+    <div class="stat"><b><span data-count="1">1</span></b><span>Point of responsibility</span></div>
+  </div></div>
+</section>
 
-<div class="wrap stats-wrap"><div class="stats reveal">
-  <div class="stat"><b>Class-1</b><span>Govt. licensed contractor</span></div>
-  <div class="stat"><b>10+</b><span>Corporate clients served</span></div>
-  <div class="stat"><b>9</b><span>Service lines under one roof</span></div>
-  <div class="stat"><b>1</b><span>Point of responsibility</span></div>
-</div></div>
+<section class="marquee-band" aria-label="Our clients">
+  <div class="wrap"><p class="marquee-label">Trusted by leading companies across Bengaluru</p></div>
+  <div class="marquee"><div class="marquee-track">{marquee_items()}{marquee_items(True)}</div></div>
+</section>
 
 <section class="section"><div class="wrap split">
   <div class="reveal">
@@ -513,6 +569,7 @@ def page_projects():
   <div class="sec-head reveal"><div class="eyebrow">Our Work</div><h2>Client Projects</h2><p>A selection of organisations we have delivered interior and electrical works for.</p></div>
   <div class="proj-grid">{proj_cards(CLIENTS)}</div>
 </div></section>
+{gallery_section()}
 <section class="section bg-cream" id="clients"><div class="wrap">
   <div class="sec-head center reveal"><div class="eyebrow">Our Clients</div><h2>Trusted by Leading Companies</h2><p>Completed and ongoing projects with these organisations.</p></div>
   <div class="clients">{client_tiles(CLIENTS)}</div>
