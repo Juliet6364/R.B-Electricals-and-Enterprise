@@ -8,7 +8,7 @@ The HTML pages are written to the repository root.
 import json, os, html, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SITE = os.environ.get("SITE_URL", "https://rb-electricals.vercel.app").rstrip("/")
+SITE = os.environ.get("SITE_URL", "https://rb-electricals-and-enterprises.vercel.app").rstrip("/")
 
 BUSINESS = {
     "name": "R.B Electricals & Enterprises",

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://rb-electricals.vercel.app/sitemap.xml
+Sitemap: https://rb-electricals-and-enterprises.vercel.app/sitemap.xml
